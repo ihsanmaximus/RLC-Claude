@@ -1,0 +1,44 @@
+name: Organize RLC Claude prototype
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/organize-rlc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  organize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract prototype into repository root
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="RLC-Website-Prototype.zip"
+          test -f "$ZIP_FILE"
+          mkdir -p /tmp/rlc-extract archive
+          unzip -oq "$ZIP_FILE" -d /tmp/rlc-extract
+          SOURCE_DIR="/tmp/rlc-extract/RLC-Website-Prototype"
+          test -f "$SOURCE_DIR/index.html"
+          cp -a "$SOURCE_DIR/." .
+          mv "$ZIP_FILE" archive/
+          rm -rf /tmp/rlc-extract
+          echo "Root project files:"
+          find . -maxdepth 4 -type f -not -path './.git/*' | sort
+
+      - name: Commit organized project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Organize Claude RLC prototype at repository root"
+            git push
+          fi
